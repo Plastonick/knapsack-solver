@@ -1,0 +1,11 @@
+{
+  "name": "plastonick/knapsack-solver",
+  "description": "An OOP wrapper for a knapsack solver",
+  "autoload": {
+    "psr-4": {
+      "Plastonick\\Knapsack\\": "src/"
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
+}
