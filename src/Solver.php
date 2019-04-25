@@ -59,6 +59,10 @@ class Solver
 
     private function iterate($index, $availableWeight)
     {
+        if ($index < 0) {
+            return [0, []];
+        }
+
         $this->iterations++;
 
         if (isset($this->memo[$index][$availableWeight])) {
