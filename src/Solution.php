@@ -21,6 +21,7 @@ class Solution
     {
         $this->items = $items;
         $this->value = $value;
+        $this->iterations = $iterations;
     }
 
     /**
