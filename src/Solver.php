@@ -7,8 +7,11 @@ class Solver
     /** @var Item[] */
     private $items;
 
+    /** @var int|float */
+    private $weightLimit;
+
     /** @var int */
-    private $availableWeight;
+    private $itemLimit;
 
     /**
      * Values of items
@@ -36,14 +39,16 @@ class Solver
 
     /**
      * @param Item[] $items
-     * @param int|float $availableWeight
+     * @param int|float $weightLimit
+     * @param int|float|null $itemLimit
      *
      * @throws UnexpectedValueException
      */
-    public function __construct(array $items, $availableWeight)
+    public function __construct(array $items, $weightLimit, $itemLimit = null)
     {
         $this->prepareItems($items);
-        $this->availableWeight = $availableWeight;
+        $this->weightLimit = $weightLimit;
+        $this->itemLimit = $itemLimit !== null ? $itemLimit : count($items);
     }
 
     /**
@@ -51,13 +56,13 @@ class Solver
      */
     public function solve()
     {
-        list($value, $itemIndexes) = $this->iterate(count($this->items) - 1, $this->availableWeight);
+        list($value, $itemIndexes) = $this->iterate(count($this->items) - 1, $this->weightLimit, $this->itemLimit);
         $chosenItems = $this->buildItems($itemIndexes);
 
         return new Solution($chosenItems, $value, $this->iterations);
     }
 
-    private function iterate($index, $availableWeight)
+    private function iterate($index, $availableWeight, $availableItems)
     {
         if ($index < 0) {
             return [0, []];
@@ -65,41 +70,46 @@ class Solver
 
         $this->iterations++;
 
-        if (isset($this->memo[$index][$availableWeight])) {
-            return [$this->memo[$index][$availableWeight], $this->memo['picked'][$index][$availableWeight]];
+        if (isset($this->memo[$index][$availableWeight][$availableItems])) {
+            return [$this->memo[$index][$availableWeight][$availableItems], $this->memo['picked'][$index][$availableWeight][$availableItems]];
         }
+
+        if ($availableItems === 0) {
+            return [0, []];
+        }
+
 
         // At end of decision branch
         if ($index === 0) {
             if ($this->weights[$index] <= $availableWeight) {
                 // Cache this branch
-                $this->memo[$index][$availableWeight] = $this->values[$index];
-                $this->memo['picked'][$index][$availableWeight] = [$index];
+                $this->memo[$index][$availableWeight][$availableItems] = $this->values[$index];
+                $this->memo['picked'][$index][$availableWeight][$availableItems] = [$index];
 
                 return [$this->values[$index], [$index]];
             }
 
-            $this->memo[$index][$availableWeight] = 0;
-            $this->memo['picked'][$index][$availableWeight] = [];
+            $this->memo[$index][$availableWeight][$availableItems] = 0;
+            $this->memo['picked'][$index][$availableWeight][$availableItems] = [];
 
             return [0, []];
         }
 
         // Get the result of the next branch (without this item)
-        list ($valueWithoutCurrent, $chosenItemsWithoutCurrent) = $this->iterate($index - 1, $availableWeight);
+        list ($valueWithoutCurrent, $chosenItemsWithoutCurrent) = $this->iterate($index - 1, $availableWeight, $availableItems);
 
         // This item is too heavy for this branch
         if ($this->weights[$index] > $availableWeight) {
             // Cache and return the result without the current item
-            $this->memo[$index][$availableWeight] = $valueWithoutCurrent;
-            $this->memo['picked'][$index][$availableWeight] = $chosenItemsWithoutCurrent;
+            $this->memo[$index][$availableWeight][$availableItems] = $valueWithoutCurrent;
+            $this->memo['picked'][$index][$availableWeight][$availableItems] = $chosenItemsWithoutCurrent;
 
             return [$valueWithoutCurrent, $chosenItemsWithoutCurrent];
         }
 
         // Get the result of the next branch (with this item)
         $resultantAvailableWeight = $availableWeight - $this->weights[$index];
-        list ($valueWithCurrent, $chosenItemsWithCurrent) = $this->iterate($index - 1, $resultantAvailableWeight);
+        list ($valueWithCurrent, $chosenItemsWithCurrent) = $this->iterate($index - 1, $resultantAvailableWeight, $availableItems - 1);
         $valueWithCurrent += $this->values[$index];
 
         // Compare the result of including the current item or not
@@ -113,8 +123,8 @@ class Solver
         }
 
         // Cache and return this result
-        $this->memo[$index][$availableWeight] = $res;
-        $this->memo['picked'][$index][$availableWeight] = $picked;
+        $this->memo[$index][$availableWeight][$availableItems] = $res;
+        $this->memo['picked'][$index][$availableWeight][$availableItems] = $picked;
 
         return [$res, $picked];
     }
