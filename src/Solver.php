@@ -8,7 +8,7 @@ class Solver
     private $items;
 
     /** @var int */
-    private $availableWeight;
+    private $weightLimit;
 
     /**
      * Values of items
@@ -36,14 +36,14 @@ class Solver
 
     /**
      * @param Item[] $items
-     * @param int|float $availableWeight
+     * @param int|float $weightLimit
      *
      * @throws UnexpectedValueException
      */
-    public function __construct(array $items, $availableWeight)
+    public function __construct(array $items, $weightLimit)
     {
         $this->prepareItems($items);
-        $this->availableWeight = $availableWeight;
+        $this->weightLimit = $weightLimit;
     }
 
     /**
@@ -51,7 +51,7 @@ class Solver
      */
     public function solve()
     {
-        list($value, $itemIndexes) = $this->iterate(count($this->items) - 1, $this->availableWeight);
+        list($value, $itemIndexes) = $this->iterate(count($this->items) - 1, $this->weightLimit);
         $chosenItems = $this->buildItems($itemIndexes);
 
         return new Solution($chosenItems, $value, $this->iterations);
