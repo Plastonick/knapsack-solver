@@ -39,7 +39,7 @@ foreach ($names as $index => $name) {
   $items[] = new BasicItem($name, $weights[$index], $values[$index]);
 }
 
-$solver = new Solver($items, 400);
+$solver = new Solver($items, 400, 4);
 $solution = $solver->solve();
 
 echo "Total value: {$solution->getValue()}\n";
