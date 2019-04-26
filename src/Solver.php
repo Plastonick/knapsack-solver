@@ -7,8 +7,11 @@ class Solver
     /** @var Item[] */
     private $items;
 
-    /** @var int */
+    /** @var int|float */
     private $weightLimit;
+
+    /** @var int */
+    private $itemLimit;
 
     /**
      * Values of items
@@ -37,13 +40,15 @@ class Solver
     /**
      * @param Item[] $items
      * @param int|float $weightLimit
+     * @param int|float|null $itemLimit
      *
      * @throws UnexpectedValueException
      */
-    public function __construct(array $items, $weightLimit)
+    public function __construct(array $items, $weightLimit, $itemLimit = null)
     {
         $this->prepareItems($items);
         $this->weightLimit = $weightLimit;
+        $this->itemLimit = $itemLimit;
     }
 
     /**
@@ -51,15 +56,24 @@ class Solver
      */
     public function solve()
     {
-        list($value, $itemIndexes) = $this->iterate(count($this->items) - 1, $this->weightLimit);
+        if (!isset($this->itemLimit)) {
+            $this->itemLimit = count($this->items);
+        }
+
+        list($value, $itemIndexes) = $this->iterate(count($this->items) - 1, $this->weightLimit, $this->itemLimit);
         $chosenItems = $this->buildItems($itemIndexes);
 
         return new Solution($chosenItems, $value, $this->iterations);
     }
 
-    private function iterate($index, $availableWeight)
+    private function iterate($index, $availableWeight, $availableItems)
     {
         if ($index < 0) {
+            return [0, []];
+        }
+
+        // TODO this doesn't quite work as expected
+        if ($availableItems === 0) {
             return [0, []];
         }
 
@@ -86,7 +100,7 @@ class Solver
         }
 
         // Get the result of the next branch (without this item)
-        list ($valueWithoutCurrent, $chosenItemsWithoutCurrent) = $this->iterate($index - 1, $availableWeight);
+        list ($valueWithoutCurrent, $chosenItemsWithoutCurrent) = $this->iterate($index - 1, $availableWeight, $availableItems);
 
         // This item is too heavy for this branch
         if ($this->weights[$index] > $availableWeight) {
@@ -99,7 +113,7 @@ class Solver
 
         // Get the result of the next branch (with this item)
         $resultantAvailableWeight = $availableWeight - $this->weights[$index];
-        list ($valueWithCurrent, $chosenItemsWithCurrent) = $this->iterate($index - 1, $resultantAvailableWeight);
+        list ($valueWithCurrent, $chosenItemsWithCurrent) = $this->iterate($index - 1, $resultantAvailableWeight, $availableItems - 1);
         $valueWithCurrent += $this->values[$index];
 
         // Compare the result of including the current item or not
