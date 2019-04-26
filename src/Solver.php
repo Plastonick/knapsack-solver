@@ -48,7 +48,7 @@ class Solver
     {
         $this->prepareItems($items);
         $this->weightLimit = $weightLimit;
-        $this->itemLimit = $itemLimit;
+        $this->itemLimit = $itemLimit !== null ? $itemLimit : count($items);
     }
 
     /**
@@ -56,10 +56,6 @@ class Solver
      */
     public function solve()
     {
-        if (!isset($this->itemLimit)) {
-            $this->itemLimit = count($this->items);
-        }
-
         list($value, $itemIndexes) = $this->iterate(count($this->items) - 1, $this->weightLimit, $this->itemLimit);
         $chosenItems = $this->buildItems($itemIndexes);
 
