@@ -2,14 +2,12 @@
 
 namespace Plastonick\Knapsack;
 
-use function array_push;
-
 class State
 {
     /** @var int|float */
     private $value;
 
-    /** @var Item[] */
+    /** @var array */
     private $items;
 
     public function __construct($value, array $items)
@@ -27,7 +25,7 @@ class State
     }
 
     /**
-     * @return Item[]
+     * @return array
      */
     public function getItems()
     {
