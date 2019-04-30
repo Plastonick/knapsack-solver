@@ -48,7 +48,7 @@ class Solver
     {
         $this->prepareItems($items);
         $this->weightLimit = $weightLimit;
-        $this->itemLimit = $itemLimit !== null ? $itemLimit : count($items);
+        $this->itemLimit = $itemLimit;
     }
 
     /**
@@ -64,8 +64,8 @@ class Solver
 
     private function iterate($index, $availableWeight, $availableItems)
     {
-        if ($index < 0) {
-            return [0, []];
+        if (!isset($this->itemLimit)) {
+            $availableItems = INF;
         }
 
         $this->iterations++;
@@ -74,38 +74,13 @@ class Solver
             return [$this->memo[$index][$availableWeight][$availableItems], $this->memo['picked'][$index][$availableWeight][$availableItems]];
         }
 
-        if ($availableItems === 0) {
-            return [0, []];
-        }
-
-
-        // At end of decision branch
-        if ($index === 0) {
-            if ($this->weights[$index] <= $availableWeight) {
-                // Cache this branch
-                $this->memo[$index][$availableWeight][$availableItems] = $this->values[$index];
-                $this->memo['picked'][$index][$availableWeight][$availableItems] = [$index];
-
-                return [$this->values[$index], [$index]];
-            }
-
-            $this->memo[$index][$availableWeight][$availableItems] = 0;
-            $this->memo['picked'][$index][$availableWeight][$availableItems] = [];
-
+        // If we are in an invalid state, return nil values
+        if ($availableItems === 0 || $index < 0 || $availableWeight < 0) {
             return [0, []];
         }
 
         // Get the result of the next branch (without this item)
         list ($valueWithoutCurrent, $chosenItemsWithoutCurrent) = $this->iterate($index - 1, $availableWeight, $availableItems);
-
-        // This item is too heavy for this branch
-        if ($this->weights[$index] > $availableWeight) {
-            // Cache and return the result without the current item
-            $this->memo[$index][$availableWeight][$availableItems] = $valueWithoutCurrent;
-            $this->memo['picked'][$index][$availableWeight][$availableItems] = $chosenItemsWithoutCurrent;
-
-            return [$valueWithoutCurrent, $chosenItemsWithoutCurrent];
-        }
 
         // Get the result of the next branch (with this item)
         $resultantAvailableWeight = $availableWeight - $this->weights[$index];
