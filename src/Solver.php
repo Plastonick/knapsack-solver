@@ -48,7 +48,7 @@ class Solver
     {
         $this->prepareItems($items);
         $this->weightLimit = $weightLimit;
-        $this->itemLimit = $itemLimit !== null ? $itemLimit : count($items);
+        $this->itemLimit = $itemLimit ?: INF;
     }
 
     /**
@@ -56,77 +56,48 @@ class Solver
      */
     public function solve()
     {
-        list($value, $itemIndexes) = $this->iterate(count($this->items) - 1, $this->weightLimit, $this->itemLimit);
-        $chosenItems = $this->buildItems($itemIndexes);
+        $state = $this->iterate(count($this->items) - 1, $this->weightLimit, $this->itemLimit);
+        $chosenItems = $this->buildItems($state->getItems());
 
-        return new Solution($chosenItems, $value, $this->iterations);
+        return new Solution($chosenItems, $state->getValue(), $this->iterations);
     }
 
     private function iterate($index, $availableWeight, $availableItems)
     {
-        if ($index < 0) {
-            return [0, []];
-        }
-
         $this->iterations++;
+        $key = "{$index}-{$availableWeight}-{$availableItems}";
 
-        if (isset($this->memo[$index][$availableWeight][$availableItems])) {
-            return [$this->memo[$index][$availableWeight][$availableItems], $this->memo['picked'][$index][$availableWeight][$availableItems]];
+        if (isset($this->memo[$key])) {
+            return $this->memo[$key];
         }
 
-        if ($availableItems === 0) {
-            return [0, []];
-        }
-
-
-        // At end of decision branch
-        if ($index === 0) {
-            if ($this->weights[$index] <= $availableWeight) {
-                // Cache this branch
-                $this->memo[$index][$availableWeight][$availableItems] = $this->values[$index];
-                $this->memo['picked'][$index][$availableWeight][$availableItems] = [$index];
-
-                return [$this->values[$index], [$index]];
-            }
-
-            $this->memo[$index][$availableWeight][$availableItems] = 0;
-            $this->memo['picked'][$index][$availableWeight][$availableItems] = [];
-
-            return [0, []];
+        // If we are in an invalid state, return nil values
+        if ($availableItems === 0 || $index < 0 || $availableWeight < 0) {
+            return new State(0, []);
         }
 
         // Get the result of the next branch (without this item)
-        list ($valueWithoutCurrent, $chosenItemsWithoutCurrent) = $this->iterate($index - 1, $availableWeight, $availableItems);
-
-        // This item is too heavy for this branch
-        if ($this->weights[$index] > $availableWeight) {
-            // Cache and return the result without the current item
-            $this->memo[$index][$availableWeight][$availableItems] = $valueWithoutCurrent;
-            $this->memo['picked'][$index][$availableWeight][$availableItems] = $chosenItemsWithoutCurrent;
-
-            return [$valueWithoutCurrent, $chosenItemsWithoutCurrent];
-        }
+        $stateWithoutCurrent = $this->iterate($index - 1, $availableWeight, $availableItems);
 
         // Get the result of the next branch (with this item)
         $resultantAvailableWeight = $availableWeight - $this->weights[$index];
-        list ($valueWithCurrent, $chosenItemsWithCurrent) = $this->iterate($index - 1, $resultantAvailableWeight, $availableItems - 1);
-        $valueWithCurrent += $this->values[$index];
+        $stateWithCurrent = $this->iterate($index - 1, $resultantAvailableWeight, $availableItems - 1);
 
         // Compare the result of including the current item or not
-        if ($valueWithCurrent > $valueWithoutCurrent) {
-            $res = $valueWithCurrent;
-            $picked = $chosenItemsWithCurrent;
+        $valueWithCurrent = $stateWithCurrent->getValue() + $this->values[$index];
+        if ($valueWithCurrent > $stateWithoutCurrent->getValue()) {
+            $picked = $stateWithCurrent->getItems();
             array_push($picked, $index);
+
+            $best = new State($valueWithCurrent, $picked);
         } else {
-            $res = $valueWithoutCurrent;
-            $picked = $chosenItemsWithoutCurrent;
+            $best = $stateWithoutCurrent;
         }
 
         // Cache and return this result
-        $this->memo[$index][$availableWeight][$availableItems] = $res;
-        $this->memo['picked'][$index][$availableWeight][$availableItems] = $picked;
+        $this->memo[$key] = $best;
 
-        return [$res, $picked];
+        return $best;
     }
 
     /**
