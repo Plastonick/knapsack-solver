@@ -48,7 +48,7 @@ class Solver
     {
         $this->prepareItems($items);
         $this->weightLimit = $weightLimit;
-        $this->itemLimit = $itemLimit;
+        $this->itemLimit = $itemLimit ?: INF;
     }
 
     /**
@@ -64,10 +64,6 @@ class Solver
 
     private function iterate($index, $availableWeight, $availableItems)
     {
-        if (!isset($this->itemLimit)) {
-            $availableItems = INF;
-        }
-
         $this->iterations++;
         $key = "{$index}-{$availableWeight}-{$availableItems}";
 
