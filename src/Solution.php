@@ -16,6 +16,7 @@ class Solution
     /**
      * @param Item[] $items
      * @param int|float $value
+     * @param int $iterations
      */
     public function __construct(array $items, $value, $iterations)
     {
@@ -30,6 +31,19 @@ class Solution
     public function getItems()
     {
         return $this->items;
+    }
+
+    /**
+     * @return int|float
+     */
+    public function getWeight()
+    {
+        return array_reduce(
+            $this->items,
+            function ($comparison, Item $item) {
+                return $comparison + $item->getWeight();
+            }
+        );
     }
 
     /**
