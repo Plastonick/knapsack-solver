@@ -40,15 +40,15 @@ class Solver
     /**
      * @param Item[] $items
      * @param int|float $weightLimit
-     * @param int|float|null $itemLimit
+     * @param int|float $itemLimit
      *
      * @throws UnexpectedValueException
      */
-    public function __construct(array $items, $weightLimit, $itemLimit = null)
+    public function __construct(array $items, $weightLimit, $itemLimit = INF)
     {
         $this->prepareItems($items);
         $this->weightLimit = $weightLimit;
-        $this->itemLimit = $itemLimit ?: INF;
+        $this->itemLimit = $itemLimit;
     }
 
     /**
