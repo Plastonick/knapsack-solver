@@ -79,8 +79,18 @@ class Solver
         // Get the result of the next branch (without this item)
         $stateWithoutCurrent = $this->iterate($index - 1, $availableWeight, $availableItems);
 
-        // Get the result of the next branch (with this item)
+        // Get the available weight if we were to include this item
         $resultantAvailableWeight = $availableWeight - $this->weights[$index];
+
+        // If item is too heavy to be included at this point
+        if ($resultantAvailableWeight < 0) {
+            // Cache and return this result
+            $this->memo[$key] = $stateWithoutCurrent;
+
+            return $stateWithoutCurrent;
+        }
+
+        // Get the result of the next branch (with this item)
         $stateWithCurrent = $this->iterate($index - 1, $resultantAvailableWeight, $availableItems - 1);
 
         // Compare the result of including the current item or not

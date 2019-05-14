@@ -26,6 +26,49 @@ final class SolverTest extends TestCase
 
     public function basicItemProvider()
     {
+        $items = $this->buildBasicItems();
+        return ['basic example' => [$items, 400, 1030, 396]];
+    }
+
+    /**
+     * @dataProvider itemLimitParametersProvider
+     *
+     * @param int $itemLimit
+     * @param int|float $weightLimit
+     * @param int|float $expectedValue
+     * @param int|float $expectedWeight
+     */
+    public function testItemLimitVariant($itemLimit, $weightLimit, $expectedValue, $expectedWeight)
+    {
+        $items = $this->buildBasicItems();
+
+        $solver = new Solver($items, $weightLimit, $itemLimit);
+        $solution = $solver->solve();
+
+        $this->assertEquals($expectedValue, $solution->getValue());
+        $this->assertEquals($expectedWeight, $solution->getWeight());
+    }
+
+    public function itemLimitParametersProvider()
+    {
+        // item limit, weight limit, expected value, expected weight
+        return [
+            'larger limit than number of items' => [30, 400, 1030, 396],
+            'no items' => [0, 400, 0, 0],
+            'no items, tiny limit' => [0, 0, 0, 0],
+            'many items, tiny limit' => [10, 0, 0, 0],
+            'one item medium-large limit' => [1, 60, 160, 50],
+            'two items medium-large limit' => [2, 60, 310, 59],
+            'four items arbitrarily large limit' => [4, 999, 590, 234],
+            'six items medium limit' => [6, 200, 605, 177],
+        ];
+    }
+
+    /**
+     * @return array
+     */
+    private function buildBasicItems()
+    {
         $itemData = [
             'map' => [9, 150],
             'compass' => [13, 35],
@@ -56,6 +99,6 @@ final class SolverTest extends TestCase
             $items[] = new BasicItem($name, $weight, $value);
         }
 
-        return ['basic example' => [$items, 400, 1030, 396]];
+        return $items;
     }
 }
