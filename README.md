@@ -6,3 +6,7 @@ An example usage is given in example.php
 
 Credit for the algorithm:  
 https://rosettacode.org/wiki/Knapsack_problem/0-1#PHP
+
+## Installation
+
+`composer require plastonick/knapsack-solver`
